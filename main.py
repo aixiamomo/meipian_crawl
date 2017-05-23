@@ -50,6 +50,8 @@ async def start_category(category_id):
                     await f.write(log.encode('utf-8'))
 
             max_id = n if n else (int(max_id) - 20)
+            if int(max_id) <= 0:
+                return
             print('等待一会')
             # await asyncio.sleep(random.randint(1, 5))
 
@@ -77,7 +79,7 @@ async def post(category_id, max_id, session):
     if rst['articles']:
         max_id = min([i['id'] for i in rst['articles']])
         for article in rst['articles']:
-            if article not in filenames:
+            if article['article_id'] not in filenames:
                 await fetch_url(session, article.get('article_id'), article.get('category_name'), article['title'])
                 # await asyncio.sleep(random.randint(2, 3))  # 避免太频繁访问服务器拒绝
             else:
@@ -109,7 +111,7 @@ async def parse(html, category_name, title, article_id):
     content = "\n".join([i.text_content() for i in doc('.text').children() if i.text_content()])
     print('分类', category_name)
     print('标题', title)
-    print('内容', content)
+    # print('内容', content)
     print('文章id', article_id)
     await save_to_file(category_name, article_id, content)
 
@@ -127,6 +129,7 @@ async def save_to_file(category_name, article_id, content):
     txt_path = os.path.join(folder_name, category_name,  txt_filename)
     async with aiofiles.open(txt_path, 'wb') as f:
         await f.write(content.encode('utf-8'))
+        print('保存成功')
 
 
 def get_txtname(dir):
@@ -136,7 +139,7 @@ def get_txtname(dir):
             get_txtname(dir)
         name = (file.split('.')[0] for file in files)
         names.extend(name)
-    return names
+    return set(names)
 
 
 def main():
